@@ -222,3 +222,8 @@ __marimo__/
 build/
 dist/
 *.spec
+__pycache__/
+*.py[codz]
+dist/
+build/
+*.spec
