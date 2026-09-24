@@ -125,10 +125,11 @@ class Window(QMainWindow):
 
         self.all_files = []
         for file in os.listdir(path):
-            if file.split('.')[-1] in ['png', 'jpg', 'jpeg', 'svg']:
+            if file.split('.')[-1] in ['png', 'jpg', 'jpeg', 'svg', 'webp', 'bmp']:
                 full_file_path = f'{path}/{file}'
-                self.all_files.append(full_file_path)
 
+                self.all_files.append(full_file_path)
+                user_data['pictures_loaded'] += 1
         main_scene.folderLoadProgressBar.setMaximum(len(self.all_files))
 
         self.spawn_pictures_objects(self.all_files)
