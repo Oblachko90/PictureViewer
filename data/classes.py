@@ -136,40 +136,64 @@ class SettingsWidget(DefaultWindow):
         self.SetDarkTheme.toggled.connect(self.set_theme)
         self.SetLightTheme.toggled.connect(self.set_theme)
 
+        self.StatisticReset.clicked.connect(self.delete_user_data)
+
     def set_theme(self):
         current_theme = DARK if self.SetDarkTheme.isChecked() else LIGHT
         self.app.set_setting('Theme', str(current_theme))
+
+    def delete_user_data(self):
+        self.app.clear_user_data()
 
 
 class ConfigObject:
     filename: str
     config_path: Path
     config_dir: Path
+    default_data: dict
+    dataset: dict
 
-    def __init__(self, filename):
+    def __init__(self, filename, default_data):
         self.filename = filename
-
+        self.default_data = default_data
         self.config_dir = Path(user_config_dir('PictureViewer'))
         self.config_path = self.config_dir / self.filename
 
-    def load_user_data(self, default_data):
+    def load_user_data(self):
+        self.default_data = self.default_data
         logger.info('Try to load user data')
         if not os.path.exists(self.config_path):
             logger.warning('Config file not found. Maybe first launch')
-            return default_data
+            self.dataset = self.default_data
         logger.success('Config file found. Try to read')
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
+                self.dataset = yaml.safe_load(f)
         except Exception as e:
             logger.error(f'Failed to load config: {e}')
 
-    def save_user_data(self, data):
+    def save_user_data(self):
         logger.info('Try to save user data')
         try:
             self.config_dir.mkdir(parents=True, exist_ok=True)
             with open(self.config_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, allow_unicode=True)
+                yaml.dump(self.dataset, f, allow_unicode=True)
             logger.success('User data save successful')
         except Exception as e:
             logger.error(f'Failed to save config: {e}')
+
+    def reset(self):
+        self.dataset = self.default_data
+
+    def set(self, key, value):
+        self.dataset[key] = value
+
+    def add_value(self, key, delta):
+        if key in self.dataset.keys():
+            self.dataset[key] += delta
+
+    def get(self, key):
+        if key in self.dataset.keys():
+            return self.dataset[key]
+        else:
+            return 0

@@ -31,22 +31,20 @@ from data.constants import *
 # pyinstaller --icon=image.ico --onefile --noconsole --add-data "data;data" --name=PicureViewer  main.py
 
 
-user_data = {
+user_statistic = ConfigObject('config.yml', {
     "last_folder": "",
     "pictures_copied": 0,
     "pictures_loaded": 0,
     #Maybe later :\
-    "most_popular_picture": ''
-}
-user_statistic = ConfigObject('config.yml')
+    "most_popular_picture": '',
+    "launch_count": 0
+})
 
 
-settings = {
+settings_object = ConfigObject('settings.yml', {
     'Theme': DARK,
     "Sorting": SORT_BY_NAME_A_TO_Z
-}
-
-settings_object = ConfigObject('settings.yml')
+})
 
 
 class Window(QMainWindow):
@@ -109,7 +107,7 @@ class Window(QMainWindow):
         folder_path = QFileDialog.getExistingDirectory(self)
         if folder_path:
             print(folder_path)
-            user_data['last_folder'] = folder_path
+            user_statistic.set('last_folder', folder_path)
             self.open_pictures(folder_path)
 
     def delete_pictures(self):
@@ -129,13 +127,13 @@ class Window(QMainWindow):
                 full_file_path = f'{path}/{file}'
 
                 self.all_files.append(full_file_path)
-                user_data['pictures_loaded'] += 1
+                user_statistic.add_value('pictures_loaded', 1)
         main_scene.folderLoadProgressBar.setMaximum(len(self.all_files))
 
         self.spawn_pictures_objects(self.all_files)
 
-        for setting in settings:
-            self.set_setting(setting, settings[setting])
+        for setting in settings_object.default_data:
+            self.set_setting(setting, settings_object.get(setting))
 
     def spawn_pictures_objects(self, all_files):
         main_scene = self.get_scene('main')
@@ -163,14 +161,14 @@ class Window(QMainWindow):
             main_scene.folderLoadProgressBar.setValue(i + 1)
 
     def on_picture_copy(self):
-        user_data['pictures_copied'] += 1
+        user_statistic.add_value('pictures_copied', 1)
 
     def open_statistic(self):
-        self.statistic_window = StatisticWidget(self, user_data, settings)
+        self.statistic_window = StatisticWidget(self, user_statistic.dataset, settings_object.dataset)
         self.statistic_window.show()
 
     def open_settings(self):
-        self.settings_window = SettingsWidget(self, settings)
+        self.settings_window = SettingsWidget(self, settings_object.dataset)
         self.settings_window.show()
 
     def copy_random(self):
@@ -194,13 +192,13 @@ class Window(QMainWindow):
         match par:
             case 'Theme':
                 self.setStyleSheet(qdarkstyle.load_stylesheet(qdarkstyle.LightPalette if int(val) == LIGHT else qdarkstyle.DarkPalette))
-                settings['Theme'] = int(val)
+                settings_object.set("Theme", int(val))
             case 'Sorting':
                 self.get_scene('main').sortBy.setCurrentIndex(int(val)-2)
                 self.set_sorting(int(val))
 
     def set_sorting(self, method: int):
-        settings['Sorting'] = method
+        settings_object.set('Sorting', method)
         match method:
             case 2:
                 self.pictures.sort(key=lambda x: x.file_name)
@@ -238,14 +236,17 @@ class Window(QMainWindow):
         self.tray_icon.show()
 
     def close_in_tray(self):
-        user_statistic.save_user_data(user_data)
-        settings_object.save_user_data(settings)
+        user_statistic.save_user_data()
+        settings_object.save_user_data()
         sys.exit(0)
 
     def show_window(self):
         self.show()
         self.raise_()
         self.activateWindow()
+
+    def clear_user_data(self):
+        user_statistic.reset()
 
     def closeEvent(self, event: QCloseEvent):
         event.ignore()
@@ -266,8 +267,8 @@ class Window(QMainWindow):
 
 
 if __name__ == "__main__":
-    user_data = user_statistic.load_user_data(user_data)
-    settings = settings_object.load_user_data(settings)
+    user_statistic.load_user_data()
+    settings_object.load_user_data()
 
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet())
@@ -276,7 +277,8 @@ if __name__ == "__main__":
 
     window.show()
 
-    if len(user_data['last_folder']):
-        QTimer.singleShot(200, lambda: window.open_pictures(user_data['last_folder']))
+    if len(user_statistic.get('last_folder')):
+        QTimer.singleShot(200, lambda: window.open_pictures(user_statistic.get('last_folder')))
 
+    user_statistic.add_value('launch_count', 1)
     sys.exit(app.exec())
