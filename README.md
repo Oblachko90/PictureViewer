@@ -57,3 +57,6 @@ Right-click the tray icon to access:
 - **License:** GNU GPL v3.0
 
 ---
+<div align="center">
+⭐ If you like this project, give it a star — it really helps!
+</div> ```
