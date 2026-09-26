@@ -53,7 +53,7 @@ Right-click the tray icon to access:
 
 - **Language:** Python 3
 - **GUI Framework:** PyQt6
-- **Platform:** Cross-platform (Windows / Linux / macOS)
+- **Platform:** Windows
 - **License:** GNU GPL v3.0
 
 ---
